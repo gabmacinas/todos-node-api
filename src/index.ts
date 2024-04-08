@@ -7,6 +7,12 @@ dotenv.config();
 const app: Express = express();
 const port = process.env.PORT || 3001;
 
+const headers = {
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Origin': 'http://localhost:5173',
+  'Access-Control-Allow-Methods': 'POST,GET,DELETE,PATCH',
+}
+
 const pool = new pg.Pool({
   user: process.env.PGUSER,
   host: process.env.PGHOST,
@@ -75,6 +81,7 @@ app.get('/todos', async (req: Request, res: Response) => {
     return;
   }
   const data = await runQuery('GET', '');
+  res.header(headers);
   res.send(data);
 });
 
@@ -97,6 +104,7 @@ app.put('/todos', (req: Request, res: Response) => {
     }
     try {
       await runQuery('POST', jsonData.name);
+      res.header(headers);
       res.send(await runQuery('GET', ''));
     } catch {
       res.status(500).send('Internal Server Error');
@@ -116,6 +124,7 @@ app.delete('/todos/:id', async (req: Request, res: Response) => {
   }
   try {
     await runQuery('DELETE', '', id);
+    res.header(headers);
     res.send(await runQuery('GET', ''));
   } catch {
     res.status(500).send('Internal Server Error');
@@ -140,10 +149,12 @@ app.patch('/todos/:id', (req: Request, res: Response) => {
     req.on('end', async () => {
       const jsonData = JSON.parse(data);
       if (!jsonData.name) {
+        res.header(headers);
         res.status(400).send('Bad Request');
         return;
       }
       await runQuery('PATCH', jsonData.name, id);
+      res.header(headers);
       res.send(await runQuery('GET', ''));
     });
   } catch {
